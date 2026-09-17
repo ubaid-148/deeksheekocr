@@ -64,7 +64,7 @@
 
 ## Google Colab
 
-[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, installs vLLM, and runs an OCR smoke test. Select a GPU runtime before running the cells. OCR runs in a fresh Python process so Colab's cached Pillow modules do not affect vLLM imports. If Pillow files on disk are inconsistent, the notebook repairs the package automatically.
+[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, installs vLLM in an isolated Python environment, and runs an OCR smoke test. Select a GPU runtime before running the cells. The isolated environment avoids conflicts with Colab's preinstalled TorchAudio and Pillow packages.
   
 
 
