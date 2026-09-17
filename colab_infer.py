@@ -1,11 +1,18 @@
 """Run DeepSeek-OCR in a fresh Python process from the Colab notebook."""
 
 import argparse
+import json
+import re
 from contextlib import ExitStack
 from pathlib import Path
 
 
-PROMPT = "<image>\n<|grounding|>Convert the document to markdown."
+PROMPT = "<image>\nFree OCR."
+MODEL = "deepseek-ai/DeepSeek-OCR"
+GROUNDING_BLOCK = re.compile(
+    r"<\|ref\|>.*?<\|/ref\|><\|det\|>.*?<\|/det\|>", re.DOTALL
+)
+SPECIAL_TOKEN = re.compile(r"<\|[^<>]*\|>")
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,18 +23,28 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--smoke", action="store_true", help="Create a small test image")
     parser.add_argument("--dtype", choices=("float16", "bfloat16"), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--json-output", type=Path, help="Clean per-page JSON result")
     return parser.parse_args()
 
 
-def recognize(llm, sampling_params, image) -> str:
-    return llm.generate(
+def clean_ocr_text(raw: str) -> str:
+    text = GROUNDING_BLOCK.sub("", raw)
+    text = SPECIAL_TOKEN.sub("", text)
+    text = text.replace("<｜end▁of▁sentence｜>", "")
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def recognize(llm, sampling_params, image) -> tuple[str, bool]:
+    completion = llm.generate(
         [{"prompt": PROMPT, "multi_modal_data": {"image": image}}],
         sampling_params,
-    )[0].outputs[0].text
+    )[0].outputs[0]
+    return clean_ocr_text(completion.text), completion.finish_reason == "length"
 
 
 def main() -> None:
     args = parse_args()
+    print("Loading OCR dependencies...", flush=True)
 
     from PIL import Image, ImageDraw, ImageFont
     from vllm import LLM, SamplingParams
@@ -64,8 +81,9 @@ def main() -> None:
             with Image.open(args.image) as opened:
                 image = opened.convert("RGB")
 
+        print("Loading DeepSeek-OCR model; the first run downloads its weights...", flush=True)
         llm = LLM(
-            model="deepseek-ai/DeepSeek-OCR",
+            model=MODEL,
             dtype=args.dtype,
             max_model_len=4096,
             max_num_seqs=1,
@@ -77,7 +95,7 @@ def main() -> None:
         )
         sampling_params = SamplingParams(
             temperature=0.0,
-            max_tokens=1024,
+            max_tokens=2048,
             extra_args={
                 "ngram_size": 30,
                 "window_size": 90,
@@ -85,8 +103,10 @@ def main() -> None:
             },
             skip_special_tokens=False,
         )
+        print("Model ready", flush=True)
 
         args.output.parent.mkdir(parents=True, exist_ok=True)
+        pages = []
         if document is not None:
             with args.output.open("w", encoding="utf-8") as output_file:
                 for page_number, page in enumerate(document, start=1):
@@ -98,18 +118,46 @@ def main() -> None:
                         "RGB", (pix.width, pix.height), pix.samples
                     )
                     del pix
-                    result = recognize(llm, sampling_params, page_image)
+                    result, truncated = recognize(llm, sampling_params, page_image)
                     del page_image
-                    output_file.write(f"## Page {page_number}\n\n{result.strip()}\n\n")
+                    pages.append(
+                        {"page": page_number, "text": result, "truncated": truncated}
+                    )
+                    output_file.write(f"## Page {page_number}\n\n{result}\n\n")
                     output_file.flush()
+                    if truncated:
+                        print(
+                            f"Warning: Page {page_number} reached the output token limit",
+                            flush=True,
+                        )
             print(f"Saved {document.page_count} pages: {args.output}")
         else:
-            result = recognize(llm, sampling_params, image)
+            result, truncated = recognize(llm, sampling_params, image)
             if not result.strip():
                 raise RuntimeError("OCR returned empty text")
+            pages.append({"page": 1, "text": result, "truncated": truncated})
             args.output.write_text(result, encoding="utf-8")
             print(result)
+            if truncated:
+                print("Warning: OCR reached the output token limit", flush=True)
             print(f"\nSaved: {args.output}")
+
+        if args.json_output:
+            args.json_output.parent.mkdir(parents=True, exist_ok=True)
+            args.json_output.write_text(
+                json.dumps(
+                    {
+                        "source": args.pdf.name if args.pdf else args.image.name if args.image else "smoke",
+                        "model": MODEL,
+                        "mode": "free_ocr",
+                        "pages": pages,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            print(f"Saved JSON: {args.json_output}", flush=True)
 
 
 if __name__ == "__main__":

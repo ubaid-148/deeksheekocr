@@ -64,7 +64,7 @@
 
 ## Google Colab
 
-[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, installs vLLM in an isolated Python environment, and runs an OCR smoke test. Select a GPU runtime before running the cells. The upload cell accepts PNG, JPG, JPEG, and PDF files; PDFs are processed page by page into one Markdown file. The isolated environment avoids conflicts with Colab's preinstalled TorchAudio and Pillow packages.
+[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, and installs vLLM in an isolated Python environment. Select a GPU runtime before running the setup cells. The upload cell accepts PNG, JPG, JPEG, and PDF files; it uses the model's plain OCR prompt and downloads clean per-page text as JSON. A Markdown copy is also saved in `/content`. The isolated environment avoids conflicts with Colab's preinstalled TorchAudio and Pillow packages.
   
 
 
