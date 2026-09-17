@@ -64,7 +64,7 @@
 
 ## Google Colab
 
-[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, and installs vLLM in an isolated Python environment. Select a GPU runtime before running the setup cells. The upload cell accepts PNG, JPG, JPEG, and PDF files; it uses the model's plain OCR prompt and downloads clean per-page text as JSON. A Markdown copy is also saved in `/content`. The isolated environment avoids conflicts with Colab's preinstalled TorchAudio and Pillow packages.
+[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, and installs vLLM in an isolated Python environment. Select a GPU runtime before running the setup cells. The upload cell accepts invoice images or PDFs, reads every page with DeepSeek-OCR, then uses [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) to produce a fixed invoice JSON structure with seller, buyer, line items, totals, and review flags. Only the structured JSON is downloaded; intermediate OCR files stay in `/content/deepseek_ocr_work`. The isolated environment avoids conflicts with Colab's preinstalled TorchAudio and Pillow packages.
   
 
 

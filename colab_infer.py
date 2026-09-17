@@ -137,10 +137,11 @@ def main() -> None:
                 raise RuntimeError("OCR returned empty text")
             pages.append({"page": 1, "text": result, "truncated": truncated})
             args.output.write_text(result, encoding="utf-8")
-            print(result)
+            if args.smoke:
+                print(result)
             if truncated:
                 print("Warning: OCR reached the output token limit", flush=True)
-            print(f"\nSaved: {args.output}")
+            print(f"Saved OCR text: {args.output}", flush=True)
 
         if args.json_output:
             args.json_output.parent.mkdir(parents=True, exist_ok=True)
