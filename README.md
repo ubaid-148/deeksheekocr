@@ -57,9 +57,14 @@
 - [2025/10/20]🚀🚀🚀 We release DeepSeek-OCR, a model to investigate the role of vision encoders from an LLM-centric viewpoint.
 
 ## Contents
+- [Google Colab](#google-colab)
 - [Install](#install)
 - [vLLM Inference](#vllm-inference)
 - [Transformers Inference](#transformers-inference)
+
+## Google Colab
+
+[Open the GPU notebook in Colab](https://colab.research.google.com/github/ubaid-148/deeksheekocr/blob/main/DeepSeek_OCR_Colab.ipynb). It clones this repository, checks the Python source, installs vLLM, and runs an OCR smoke test. Select a GPU runtime before running the cells.
   
 
 
